@@ -31,6 +31,15 @@ class UserRepository {
         return $stmt->fetch();
     }
 
+    public function findByPhoneOrEmail($identifier) {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE no_hp = :id_phone OR email = :id_email LIMIT 1");
+        $stmt->execute([
+            'id_phone' => $identifier,
+            'id_email' => $identifier
+        ]);
+        return $stmt->fetch();
+    }
+
     public function isEmailTaken($email, $excludeId = null) {
         if ($excludeId) {
             $stmt = $this->db->prepare("SELECT id FROM users WHERE email = :email AND id != :id LIMIT 1");
@@ -53,6 +62,9 @@ class UserRepository {
         return (bool) $stmt->fetch();
     }
 
+    /**
+     * Pencarian pelanggan dengan parameter unik untuk mencegah error PDO native prepared statement
+     */
     public function findAllPelanggan($keyword = '', $status = '') {
         $sql = "SELECT id, nama_depan, nama_belakang, no_hp, email, role, status_aktif, saldo, created_at 
                 FROM users 
@@ -60,8 +72,13 @@ class UserRepository {
         $params = [];
 
         if (!empty($keyword)) {
-            $sql .= " AND (nama_depan LIKE :kw OR nama_belakang LIKE :kw OR email LIKE :kw OR no_hp LIKE :kw)";
-            $params['kw'] = '%' . $keyword . '%';
+            // Gunakan placeholder unik (:kw1, :kw2, :kw3, :kw4) untuk menghindari SQLSTATE[HY093] pada PDO MySQL
+            $sql .= " AND (nama_depan LIKE :kw1 OR nama_belakang LIKE :kw2 OR email LIKE :kw3 OR no_hp LIKE :kw4)";
+            $kw = '%' . trim($keyword) . '%';
+            $params['kw1'] = $kw;
+            $params['kw2'] = $kw;
+            $params['kw3'] = $kw;
+            $params['kw4'] = $kw;
         }
 
         if ($status !== '' && $status !== null) {
@@ -140,5 +157,90 @@ class UserRepository {
         $stmt = $this->db->prepare("UPDATE users SET status_aktif = :status WHERE id = :id");
         return $stmt->execute(['id' => $id, 'status' => (int) $status]);
     }
-}
 
+    /**
+     * Mutasi Saldo Atomik (menambah atau mengurangi saldo)
+     */
+    public function updateSaldo($id, $deltaNominal) {
+        $stmt = $this->db->prepare("UPDATE users SET saldo = saldo + :delta WHERE id = :id");
+        return $stmt->execute([
+            'delta' => (float)$deltaNominal,
+            'id'    => $id
+        ]);
+    }
+
+    /**
+     * Statistik ringkasan untuk dashboard Admin / Super Admin
+     */
+    public function getSystemStats() {
+        $stmtUsers = $this->db->query("
+            SELECT 
+                COUNT(*) as total_users,
+                SUM(CASE WHEN role = 'pelanggan' THEN 1 ELSE 0 END) as total_pelanggan,
+                SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as total_admin,
+                SUM(CASE WHEN status_aktif = 1 AND role = 'pelanggan' THEN 1 ELSE 0 END) as pelanggan_aktif,
+                SUM(CASE WHEN status_aktif = 0 AND role = 'pelanggan' THEN 1 ELSE 0 END) as pelanggan_nonaktif,
+                SUM(saldo) as total_dana_beredar
+            FROM users
+        ");
+        return $stmtUsers->fetch() ?: [];
+    }
+
+    /**
+     * Mendapatkan daftar pelanggan terbaru untuk widget dashboard
+     */
+    public function getRecentCustomers($limit = 5) {
+        $stmt = $this->db->prepare("
+            SELECT id, nama_depan, nama_belakang, email, no_hp, saldo, status_aktif, created_at 
+            FROM users 
+            WHERE role = 'pelanggan' 
+            ORDER BY created_at DESC 
+            LIMIT :lim
+        ");
+        $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Mengambil daftar seluruh Admin (untuk Super Admin)
+     */
+    public function findAllAdmins() {
+        $stmt = $this->db->query("
+            SELECT u.id, u.nama_depan, u.nama_belakang, u.no_hp, u.email, u.role, u.status_aktif, u.saldo, u.created_at,
+                   CONCAT(u_creator.nama_depan, ' ', u_creator.nama_belakang) AS diangkat_oleh
+            FROM users u
+            LEFT JOIN users u_creator ON u.created_by = u_creator.id
+            WHERE u.role = 'admin'
+            ORDER BY u.created_at DESC
+        ");
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Mengangkat pelanggan menjadi Admin (Khusus Super Admin)
+     */
+    public function promoteCustomerToAdmin($customerId, $superAdminId) {
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET role = 'admin', created_by = :super_admin_id 
+            WHERE id = :id AND role = 'pelanggan'
+        ");
+        return $stmt->execute([
+            'super_admin_id' => $superAdminId,
+            'id'             => $customerId
+        ]);
+    }
+
+    /**
+     * Menurunkan status Admin kembali menjadi Pelanggan biasa (Khusus Super Admin)
+     */
+    public function demoteAdminToCustomer($adminId) {
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET role = 'pelanggan' 
+            WHERE id = :id AND role = 'admin'
+        ");
+        return $stmt->execute(['id' => $adminId]);
+    }
+}

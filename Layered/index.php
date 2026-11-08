@@ -8,9 +8,11 @@ session_start();
 
 require_once __DIR__ . '/src/presentation/AuthController.php';
 require_once __DIR__ . '/src/presentation/CustomerController.php';
+require_once __DIR__ . '/src/presentation/WalletController.php';
 
 $authController = new AuthController();
 $customerController = new CustomerController();
+$walletController = new WalletController();
 
 $page = $_GET['page'] ?? (isset($_SESSION['user']) ? 'dashboard' : 'login');
 $id = $_GET['id'] ?? null;
@@ -33,65 +35,79 @@ switch ($page) {
         $authController->profile();
         break;
 
+    // --- Dompet Digital & Transaksi Keuangan (Pelanggan & Admin) ---
+    case 'wallet':
+        $walletController->index();
+        break;
+
+    case 'wallet-history':
+        $walletController->history();
+        break;
+
+    case 'wallet-topup':
+        $walletController->processTopUp();
+        break;
+
+    case 'wallet-transfer':
+        $walletController->processTransfer();
+        break;
+
+    case 'wallet-withdraw':
+        $walletController->processWithdraw();
+        break;
+
     // --- Manajemen Pelanggan (CRUD & Search) ---
     case 'customers':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->index();
         break;
 
     case 'customer-create':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->create();
         break;
 
     case 'customer-store':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->store();
         break;
 
     case 'customer-edit':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->edit($id);
         break;
 
     case 'customer-update':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->update($id);
         break;
 
     case 'customer-delete':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->delete($id);
         break;
 
     case 'customer-toggle':
-        if (!isset($_SESSION['user'])) {
-            header("Location: index.php?page=login");
-            exit;
-        }
         $customerController->toggleStatus($id);
+        break;
+
+    // --- Riwayat Transaksi Para Pelanggan (Khusus Pengawasan Admin & Super Admin) ---
+    case 'customer-transactions':
+        $customerController->customerTransactions();
+        break;
+
+    // --- Pengelolaan Admin & Aktivitas Admin (Khusus Super Admin) ---
+    case 'admins':
+        $customerController->admins();
+        break;
+
+    case 'admin-promote':
+        $customerController->promoteAdmin();
+        break;
+
+    case 'admin-demote':
+        $customerController->demoteAdmin();
+        break;
+
+    case 'admin-activities':
+        $customerController->adminActivities();
         break;
 
     default:
         header("Location: index.php?page=dashboard");
         exit;
 }
-

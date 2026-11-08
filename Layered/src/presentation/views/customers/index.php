@@ -3,7 +3,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h4 class="fw-bold mb-0"><i class="bi bi-people me-2"></i>Daftar & Pencarian Pelanggan</h4>
-        <p class="text-muted small mb-0">Kelola data pelanggan, pencarian terfilter, dan toggle status akun</p>
+        <p class="text-muted small mb-0">Kelola data pelanggan, pencarian terfilter, dan ubah status akun</p>
     </div>
     <?php if ($currentUser['role'] === 'super_admin'): ?>
         <a href="index.php?page=customer-create" class="btn btn-primary">
@@ -13,7 +13,7 @@
 </div>
 
 <!-- Form Pencarian & Filter (Searching Pelanggan) -->
-<div class="card p-3 mb-4">
+<div class="card p-3 mb-4 shadow-sm">
     <form action="index.php" method="GET" class="row g-2 align-items-center">
         <input type="hidden" name="page" value="customers">
         
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Tabel Daftar Pelanggan -->
-<div class="card overflow-hidden">
+<div class="card overflow-hidden shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
@@ -101,14 +101,17 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
-                                    <!-- Toggle Status (Admin & Super Admin) -->
-                                    <a href="index.php?page=customer-toggle&id=<?= $c['id'] ?>" 
-                                       class="btn <?= $c['status_aktif'] ? 'btn-outline-warning' : 'btn-outline-success' ?>"
-                                       onclick="return confirm('Apakah Anda yakin ingin mengubah status aktif akun ini?')"
-                                       title="<?= $c['status_aktif'] ? 'Nonaktifkan Akun' : 'Aktifkan Akun' ?>">
+                                    <!-- Tombol Pemicu Modal Ubah Status dengan Alasan -->
+                                    <button type="button" 
+                                            class="btn <?= $c['status_aktif'] ? 'btn-outline-warning' : 'btn-outline-success' ?> btn-trigger-status"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalToggleStatus"
+                                            data-id="<?= $c['id'] ?>"
+                                            data-name="<?= htmlspecialchars($c['nama_depan'] . ' ' . $c['nama_belakang']) ?>"
+                                            data-status="<?= $c['status_aktif'] ? 'aktif' : 'nonaktif' ?>">
                                         <i class="bi <?= $c['status_aktif'] ? 'bi-lock' : 'bi-unlock' ?>"></i>
                                         <?= $c['status_aktif'] ? 'Bekukan' : 'Aktifkan' ?>
-                                    </a>
+                                    </button>
 
                                     <!-- Edit & Delete (Hanya Super Admin) -->
                                     <?php if ($currentUser['role'] === 'super_admin'): ?>
@@ -130,5 +133,64 @@
     </div>
 </div>
 
-<?php require __DIR__ . '/../layout/footer.php'; ?>
+<!-- MODAL INPUT ALASAN PERUBAHAN STATUS AKUN (SOLUSI B: MEMFUNGSIKAN KOLOM `alasan`) -->
+<div class="modal fade" id="modalToggleStatus" tabindex="-1" aria-labelledby="modalStatusLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formStatusToggle" action="" method="POST">
+                <input type="hidden" name="from" value="customers">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalStatusLabel">Ubah Status Akun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Anda akan mengubah status akun untuk: <strong id="modalTargetName" class="text-primary"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Alasan Tindakan <span class="text-danger">*</span></label>
+                        <textarea name="alasan" id="modalAlasan" class="form-control" rows="3" required
+                                  placeholder="Contoh: Terdeteksi aktivitas transfer mencurigakan / Permintaan pemulihan dari pelanggan"></textarea>
+                        <div class="form-text">Alasan ini akan disimpan di basis data pada tabel <code>user_status_logs</code> untuk keperluan audit Super Admin.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" id="btnConfirmStatus" class="btn btn-primary fw-semibold">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const statusModal = document.getElementById('modalToggleStatus');
+    if (statusModal) {
+        statusModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-id');
+            const userName = button.getAttribute('data-name');
+            const currentStatus = button.getAttribute('data-status');
+
+            const isBekukan = (currentStatus === 'aktif');
+            const actionText = isBekukan ? 'Bekukan / Nonaktifkan Akun' : 'Aktifkan Kembali Akun';
+            const defaultPlaceholder = isBekukan ? 'Terdeteksi anomali transaksi atau laporan penipuan' : 'Verifikasi identitas selesai, akun dipulihkan';
+
+            document.getElementById('modalStatusLabel').textContent = actionText;
+            document.getElementById('modalTargetName').textContent = userName;
+            document.getElementById('modalAlasan').placeholder = 'Contoh: ' + defaultPlaceholder;
+            document.getElementById('formStatusToggle').action = 'index.php?page=customer-toggle&id=' + userId;
+
+            const btnConfirm = document.getElementById('btnConfirmStatus');
+            if (isBekukan) {
+                btnConfirm.className = 'btn btn-warning fw-semibold';
+                btnConfirm.textContent = 'Konfirmasi Pembekuan Akun';
+            } else {
+                btnConfirm.className = 'btn btn-success fw-semibold';
+                btnConfirm.textContent = 'Konfirmasi Pengaktifan Akun';
+            }
+        });
+    }
+});
+</script>
+
+<?php require __DIR__ . '/../layout/footer.php'; ?>

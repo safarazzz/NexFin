@@ -2,16 +2,19 @@
 // ==========================================================
 // BUSINESS LOGIC LAYER: CustomerService
 // Bertanggung jawab atas seluruh aturan bisnis, validasi data,
-// dan pemanggilan algoritma keamanan (Bcrypt)
+// otorisasi, pengangkatan peran, audit logging, & Bcrypt
 // ==========================================================
 
 require_once __DIR__ . '/../data_access/UserRepository.php';
+require_once __DIR__ . '/../data_access/AuditLogRepository.php';
 
 class CustomerService {
     private $userRepository;
+    private $auditLogRepository;
 
     public function __construct() {
         $this->userRepository = new UserRepository();
+        $this->auditLogRepository = new AuditLogRepository();
     }
 
     /**
@@ -30,6 +33,17 @@ class CustomerService {
             throw new Exception("Data pelanggan tidak ditemukan.");
         }
         return $customer;
+    }
+
+    /**
+     * Mengambil data user apa saja berdasarkan ID
+     */
+    public function getUserById($id) {
+        $user = $this->userRepository->findById($id);
+        if (!$user) {
+            throw new Exception("Pengguna tidak ditemukan.");
+        }
+        return $user;
     }
 
     /**
@@ -70,12 +84,11 @@ class CustomerService {
         $password = $data['password'] ?? '';
         if (!$isUpdate) {
             if (empty($password)) {
-                $errors[] = "Password wajib diisi untuk pelanggan baru.";
+                $errors[] = "Password wajib diisi untuk akun baru.";
             } elseif (strlen($password) < 6) {
                 $errors[] = "Password minimal terdiri dari 6 karakter.";
             }
         } else {
-            // Jika update dan password diisi, panjangnya harus >= 6
             if (!empty($password) && strlen($password) < 6) {
                 $errors[] = "Password baru minimal terdiri dari 6 karakter.";
             }
@@ -93,7 +106,6 @@ class CustomerService {
             throw new Exception(implode("<br>", $errors));
         }
 
-        // Hashing password dengan Bcrypt
         $hashedPassword = password_hash($input['password'], PASSWORD_BCRYPT);
 
         $customerData = [
@@ -115,7 +127,6 @@ class CustomerService {
      * Logika Bisnis: Mengubah Data Pelanggan
      */
     public function updateCustomer($id, $input) {
-        // Cek keberadaan pelanggan
         $existing = $this->getCustomerById($id);
 
         $errors = $this->validateCustomerData($input, true, $id);
@@ -130,7 +141,6 @@ class CustomerService {
             'email'         => trim($input['email']),
         ];
 
-        // Jika ada password baru, hash password tersebut
         if (!empty($input['password'])) {
             $updateData['password'] = password_hash($input['password'], PASSWORD_BCRYPT);
         }
@@ -150,17 +160,103 @@ class CustomerService {
      * Logika Bisnis: Menghapus Pelanggan
      */
     public function deleteCustomer($id) {
-        $this->getCustomerById($id); // Memastikan user ada
+        $this->getCustomerById($id);
         return $this->userRepository->delete($id);
     }
 
     /**
-     * Logika Bisnis: Mengaktifkan / Menonaktifkan Status Akun
+     * Logika Bisnis: Mengaktifkan / Menonaktifkan Status Akun & Mencatat Log Audit
      */
-    public function toggleStatus($id) {
-        $customer = $this->getCustomerById($id);
-        $newStatus = $customer['status_aktif'] ? 0 : 1;
-        return $this->userRepository->updateStatus($id, $newStatus);
+    public function toggleStatus($targetUserId, $actorId, $actorRole, $alasan = '') {
+        $target = $this->getUserById($targetUserId);
+
+        // Aturan: Tidak boleh menonaktifkan akun sendiri
+        if ((int)$targetUserId === (int)$actorId) {
+            throw new Exception("Anda tidak dapat mengubah status akun Anda sendiri.");
+        }
+
+        // Aturan: Admin hanya boleh toggle status Pelanggan
+        if ($actorRole === 'admin' && $target['role'] !== 'pelanggan') {
+            throw new Exception("Akses ditolak: Admin hanya berwenang mengubah status akun pelanggan.");
+        }
+
+        // Aturan: Super Admin tidak boleh dinonaktifkan oleh siapapun
+        if ($target['role'] === 'super_admin') {
+            throw new Exception("Akun Super Admin tidak dapat dinonaktifkan.");
+        }
+
+        $statusSebelum = (bool)$target['status_aktif'];
+        $statusSesudah = !$statusSebelum;
+
+        // Eksekusi update
+        $this->userRepository->updateStatus($targetUserId, $statusSesudah);
+
+        // Catat ke Audit Log
+        $actionName = $statusSesudah ? "Mengaktifkan akun" : "Membekukan/Menonaktifkan akun";
+        $catatan = trim($alasan) ?: "{$actionName} {$target['nama_depan']} {$target['nama_belakang']}";
+        $this->auditLogRepository->createLog($targetUserId, $actorId, $statusSebelum, $statusSesudah, $catatan);
+
+        return $statusSesudah;
+    }
+
+    /**
+     * Mengambil daftar seluruh Admin (Khusus Super Admin)
+     */
+    public function getAdmins() {
+        return $this->userRepository->findAllAdmins();
+    }
+
+    /**
+     * Logika Bisnis: Mengangkat Pelanggan Menjadi Admin (Khusus Super Admin)
+     */
+    public function promoteCustomerToAdmin($customerId, $superAdminId) {
+        $customer = $this->getCustomerById($customerId);
+
+        if (!$customer['status_aktif']) {
+            throw new Exception("Pelanggan dalam status nonaktif tidak dapat diangkat menjadi Admin.");
+        }
+
+        $this->userRepository->promoteCustomerToAdmin($customerId, $superAdminId);
+
+        // Catat ke audit log
+        $this->auditLogRepository->createLog(
+            $customerId, 
+            $superAdminId, 
+            1, 
+            1, 
+            "Pengangkatan peran: Pelanggan ({$customer['nama_depan']} {$customer['nama_belakang']}) resmi diangkat menjadi Admin"
+        );
+
+        return true;
+    }
+
+    /**
+     * Logika Bisnis: Menurunkan status Admin kembali menjadi Pelanggan biasa (Khusus Super Admin)
+     */
+    public function demoteAdminToCustomer($adminId, $superAdminId) {
+        $admin = $this->getUserById($adminId);
+        if ($admin['role'] !== 'admin') {
+            throw new Exception("Hanya pengguna dengan peran Admin yang dapat diturunkan perannya.");
+        }
+
+        $this->userRepository->demoteAdminToCustomer($adminId);
+
+        // Catat ke audit log
+        $this->auditLogRepository->createLog(
+            $adminId, 
+            $superAdminId, 
+            1, 
+            1, 
+            "Penurunan peran: Admin ({$admin['nama_depan']} {$admin['nama_belakang']}) diturunkan kembali menjadi Pelanggan biasa"
+        );
+
+        return true;
+    }
+
+    /**
+     * Mengambil riwayat aktivitas seluruh Admin (Audit Log untuk Super Admin)
+     */
+    public function getAdminActivities($limit = 50) {
+        return $this->auditLogRepository->getAdminActivities($limit);
     }
 }
-

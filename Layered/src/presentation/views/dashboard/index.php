@@ -1,82 +1,108 @@
 <?php require __DIR__ . '/../layout/header.php'; ?>
 
-<div class="row g-4">
-    <!-- Kartu Sambutan & Profil Singkat -->
-    <div class="col-md-8">
-        <div class="card p-4">
-            <h4 class="fw-bold mb-1">
-                Halo, <?= htmlspecialchars($currentUser['nama_depan'] . ' ' . $currentUser['nama_belakang']) ?>!
-            </h4>
-            <p class="text-muted">
-                Anda masuk sebagai <span class="badge bg-primary text-uppercase"><?= htmlspecialchars(str_replace('_', ' ', $currentUser['role'])) ?></span>
-            </p>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Kartu Utama Dashboard Bersih & Sederhana -->
+        <div class="card p-4 shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">
+                        Selamat Datang, <?= htmlspecialchars($user['nama_depan'] . ' ' . $user['nama_belakang']) ?>!
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Anda masuk sebagai <span class="badge bg-primary text-uppercase"><?= htmlspecialchars(str_replace('_', ' ', $user['role'])) ?></span>
+                    </p>
+                </div>
+                <a href="index.php?page=profile" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-person-gear"></i> Profil Saya
+                </a>
+            </div>
 
             <hr>
 
-            <?php if ($currentUser['role'] === 'pelanggan'): ?>
-                <div class="p-3 bg-light rounded border mb-3">
-                    <span class="text-muted small">Saldo Rekening Anda:</span>
-                    <h2 class="text-success fw-bold mt-1">
-                        Rp <?= number_format($currentUser['saldo'], 2, ',', '.') ?>
-                    </h2>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="index.php?page=profile" class="btn btn-outline-primary">
-                        <i class="bi bi-person-gear"></i> Edit Profil Saya
-                    </a>
-                </div>
-            <?php else: ?>
-                <div class="alert alert-info d-flex align-items-center">
-                    <i class="bi bi-shield-check fs-2 me-3"></i>
-                    <div>
-                        <div class="fw-bold">Akses Manajemen Pengguna Aktif</div>
-                        <div class="small">
-                            <?php if ($currentUser['role'] === 'super_admin'): ?>
-                                Anda memiliki wewenang penuh untuk <strong>CRUD Pelanggan & Admin</strong> serta mengaktifkan/menonaktifkan akun.
-                            <?php else: ?>
-                                Anda memiliki wewenang untuk <strong>Mencari & Melihat Data Pelanggan</strong> serta mengaktifkan/menonaktifkan akun.
-                            <?php endif; ?>
+            <!-- Bagian Saldo: Hanya untuk Pelanggan & Admin (Pekerja dengan Saldo) -->
+            <?php if ($user['role'] === 'pelanggan' || $user['role'] === 'admin'): ?>
+                <div class="p-4 bg-light rounded border mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Saldo Rekening Anda</span>
+                            <h2 class="text-success fw-bold mb-0 mt-1">
+                                Rp <?= number_format($user['saldo'], 2, ',', '.') ?>
+                            </h2>
+                            <small class="text-muted">No. Rekening / Virtual ID: <strong><?= htmlspecialchars($user['no_hp']) ?></strong></small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="index.php?page=wallet" class="btn btn-primary">
+                                <i class="bi bi-wallet2 me-1"></i> Buka Dompet Digital
+                            </a>
+                            <a href="index.php?page=wallet-history" class="btn btn-outline-primary">
+                                <i class="bi bi-clock-history me-1"></i> Riwayat Saya
+                            </a>
                         </div>
                     </div>
                 </div>
-
-                <div class="d-flex gap-2 mt-2">
-                    <a href="index.php?page=customers" class="btn btn-primary">
-                        <i class="bi bi-people-fill me-1"></i> Buka Manajemen Pelanggan
-                    </a>
-                    <?php if ($currentUser['role'] === 'super_admin'): ?>
-                        <a href="index.php?page=customer-create" class="btn btn-success">
-                            <i class="bi bi-person-plus-fill me-1"></i> Tambah Pelanggan Baru
-                        </a>
-                    <?php endif; ?>
-                </div>
             <?php endif; ?>
-        </div>
-    </div>
 
-    <!-- Informasi Arsitektur Layered -->
-    <div class="col-md-4">
-        <div class="card p-3 bg-white">
-            <h6 class="fw-bold text-dark border-bottom pb-2">
-                <i class="bi bi-layers me-1 text-primary"></i> Struktur Layered Architecture
-            </h6>
-            <ul class="list-unstyled small mb-0">
-                <li class="mb-2">
-                    <span class="badge bg-secondary">1. Presentation</span><br>
-                    <span class="text-muted"><code>AuthController</code> & <code>CustomerController</code> menerima request HTTP & memilih View.</span>
-                </li>
-                <li class="mb-2">
-                    <span class="badge bg-secondary">2. Business Logic</span><br>
-                    <span class="text-muted"><code>CustomerService</code> & <code>AuthService</code> memvalidasi regex no HP/email, Bcrypt password, & aturan status aktif.</span>
-                </li>
-                <li>
-                    <span class="badge bg-secondary">3. Data Access</span><br>
-                    <span class="text-muted"><code>UserRepository</code> menjalankan query SQL PDO berparameter (Prepared Statements).</span>
-                </li>
-            </ul>
+            <!-- Menu Akses Cepat Sesuai Role -->
+            <h6 class="fw-bold text-dark text-uppercase small mb-3">Menu Operasional Anda</h6>
+            
+            <div class="row g-3">
+                <?php if ($user['role'] === 'super_admin'): ?>
+                    <div class="col-md-4">
+                        <a href="index.php?page=customers" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-people text-primary fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Kelola Pelanggan</h6>
+                            <small class="text-muted">CRUD data seluruh pelanggan</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="index.php?page=admins" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-shield-lock text-success fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Pengelolaan Admin</h6>
+                            <small class="text-muted">Angkat pelanggan jadi admin</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="index.php?page=admin-activities" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-activity text-warning fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Aktivitas Admin</h6>
+                            <small class="text-muted">Pantau log supervisi admin</small>
+                        </a>
+                    </div>
+                <?php elseif ($user['role'] === 'admin'): ?>
+                    <div class="col-md-6">
+                        <a href="index.php?page=customers" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-people text-primary fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Daftar & Cari Pelanggan</h6>
+                            <small class="text-muted">Pencarian data dan freeze akun</small>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="index.php?page=customer-transactions" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-receipt-cutoff text-success fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Transaksi Pelanggan</h6>
+                            <small class="text-muted">Lihat riwayat transaksi para pelanggan</small>
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="col-md-6">
+                        <a href="index.php?page=wallet" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-arrow-left-right text-primary fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Top Up & Transfer</h6>
+                            <small class="text-muted">Kelola dana dan kirim saldo</small>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="index.php?page=wallet-history" class="card text-decoration-none p-3 h-100 border text-center hover-shadow">
+                            <i class="bi bi-clock-history text-secondary fs-2 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Riwayat Transaksi</h6>
+                            <small class="text-muted">Cek mutasi dana masuk & keluar</small>
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>
-

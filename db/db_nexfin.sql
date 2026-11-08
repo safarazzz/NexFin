@@ -1,6 +1,8 @@
 -- ==========================================================
 -- DATABASE NEXFIN (nexfin_db)
 -- Single Database File: Schema (DDL) + Dummy Data (DML)
+-- Total: 1 Super Admin, 3 Admin, 21 Pelanggan
+-- Password semua akun: password123 (Bcrypt Hash)
 -- ==========================================================
 
 CREATE DATABASE IF NOT EXISTS `nexfin_db`
@@ -74,42 +76,66 @@ CREATE INDEX `idx_trans_penerima` ON `transactions`(`penerima_id`);
 
 -- ----------------------------------------------------------
 -- DATA DUMMY AWAL
--- Password semua akun: password123 (Bcrypt Hash)
+-- Password untuk semua akun: password123
+-- Hash Bcrypt: $2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2
 -- ----------------------------------------------------------
 
--- Super Admin
-INSERT INTO `users` (`id`, `nama_depan`, `nama_belakang`, `no_hp`, `email`, `password`, `role`, `status_aktif`, `saldo`, `created_by`)
-VALUES (1, 'Super', 'Admin', '081200000001', 'superadmin@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'super_admin', TRUE, 0.00, NULL);
-
--- Admin
+-- A. SUPER ADMIN (1 orang, saldo Rp 0)
 INSERT INTO `users` (`id`, `nama_depan`, `nama_belakang`, `no_hp`, `email`, `password`, `role`, `status_aktif`, `saldo`, `created_by`) VALUES 
-(2, 'Budi', 'Santoso', '081200000002', 'admin.budi@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'admin', TRUE, 0.00, 1),
-(3, 'Siti', 'Aminah', '081200000003', 'admin.siti@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'admin', TRUE, 0.00, 1);
+(1, 'Super', 'Admin', '081200000001', 'superadmin@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'super_admin', TRUE, 0.00, NULL);
 
--- Pelanggan Aktif
+-- B. ADMIN (3 orang, pekerja NexFin memiliki saldo)
 INSERT INTO `users` (`id`, `nama_depan`, `nama_belakang`, `no_hp`, `email`, `password`, `role`, `status_aktif`, `saldo`, `created_by`) VALUES 
-(4, 'Ahmad', 'Fauzi', '081234567890', 'ahmad.fauzi@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1500000.00, NULL),
-(5, 'Dewi', 'Lestari', '081234567891', 'dewi.lestari@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 750000.00, NULL),
-(6, 'Rian', 'Pratama', '081234567892', 'rian.pratama@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 250000.00, NULL);
+(2, 'Budi', 'Santoso', '081200000002', 'admin.budi@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'admin', TRUE, 5000000.00, 1),
+(3, 'Siti', 'Aminah', '081200000003', 'admin.siti@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'admin', TRUE, 4500000.00, 1),
+(4, 'Hendra', 'Wijaya', '081200000004', 'admin.hendra@nexfin.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'admin', TRUE, 3500000.00, 1);
 
--- Pelanggan Nonaktif
-INSERT INTO `users` (`id`, `nama_depan`, `nama_belakang`, `no_hp`, `email`, `password`, `role`, `status_aktif`, `saldo`, `created_by`)
-VALUES (7, 'Doni', 'Kusuma', '081234567899', 'doni.fraud@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', FALSE, 50000.00, NULL);
+-- C. PELANGGAN (21 orang)
+INSERT INTO `users` (`id`, `nama_depan`, `nama_belakang`, `no_hp`, `email`, `password`, `role`, `status_aktif`, `saldo`, `created_by`) VALUES 
+(5, 'Ahmad', 'Fauzi', '081234567801', 'ahmad.fauzi@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1500000.00, NULL),
+(6, 'Dewi', 'Lestari', '081234567802', 'dewi.lestari@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 750000.00, NULL),
+(7, 'Rian', 'Pratama', '081234567803', 'rian.pratama@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 250000.00, NULL),
+(8, 'Doni', 'Kusuma', '081234567804', 'doni.fraud@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', FALSE, 50000.00, NULL),
+(9, 'Maya', 'Indah', '081234567805', 'maya.indah@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1200000.00, NULL),
+(10, 'Rizky', 'Ramadhan', '081234567806', 'rizky.ramadhan@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 890000.00, NULL),
+(11, 'Putri', 'Ayu', '081234567807', 'putri.ayu@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 430000.00, NULL),
+(12, 'Eko', 'Prasetyo', '081234567808', 'eko.prasetyo@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 2100000.00, NULL),
+(13, 'Nurul', 'Hidayah', '081234567809', 'nurul.hidayah@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 650000.00, NULL),
+(14, 'Bayu', 'Saputra', '081234567810', 'bayu.saputra@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1750000.00, NULL),
+(15, 'Anisa', 'Rahma', '081234567811', 'anisa.rahma@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 320000.00, NULL),
+(16, 'Dimas', 'Setiawan', '081234567812', 'dimas.setiawan@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 940000.00, NULL),
+(17, 'Fajar', 'Nugraha', '081234567813', 'fajar.nugraha@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 510000.00, NULL),
+(18, 'Gita', 'Gutawa', '081234567814', 'gita.gutawa@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1340000.00, NULL),
+(19, 'Haris', 'Munandar', '081234567815', 'haris.munandar@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 780000.00, NULL),
+(20, 'Intan', 'Permata', '081234567816', 'intan.permata@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1620000.00, NULL),
+(21, 'Joko', 'Susilo', '081234567817', 'joko.susilo@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', FALSE, 15000.00, NULL),
+(22, 'Kartika', 'Sari', '081234567818', 'kartika.sari@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 880000.00, NULL),
+(23, 'Lutfi', 'Hakim', '081234567819', 'lutfi.hakim@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 1150000.00, NULL),
+(24, 'Mega', 'Utami', '081234567820', 'mega.utami@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 470000.00, NULL),
+(25, 'Naufal', 'Zaki', '081234567821', 'naufal.zaki@gmail.com', '$2y$10$HQB.pHzLp9bEn/wyf2X9ku0QRJ7oTWZ0jKjgYedXCH/Ti2K1ouaI2', 'pelanggan', TRUE, 2300000.00, NULL);
 
-ALTER TABLE `users` AUTO_INCREMENT = 8;
+ALTER TABLE `users` AUTO_INCREMENT = 26;
 
--- Transaksi
+-- D. TRANSAKSI (Campuran Top Up, Transfer antar Pelanggan, dan Tarik Saldo)
 INSERT INTO `transactions` (`id`, `pengirim_id`, `penerima_id`, `jenis`, `nominal`, `saldo_akhir`, `keterangan`) VALUES 
-(1, NULL, 4, 'TOPUP', 2000000.00, 2000000.00, 'Top Up saldo via Virtual Account'),
-(2, 4, 5, 'TRANSFER', 500000.00, 1500000.00, 'Transfer saldo ke Dewi Lestari'),
-(3, 5, NULL, 'WITHDRAW', 200000.00, 750000.00, 'Penarikan tunai saldo ke Bank BCA'),
-(4, NULL, 6, 'TOPUP', 250000.00, 250000.00, 'Top Up saldo via Merchant');
+(1, NULL, 5, 'TOPUP', 2000000.00, 2000000.00, 'Top Up saldo via Virtual Account'),
+(2, 5, 6, 'TRANSFER', 500000.00, 1500000.00, 'Transfer saldo ke Dewi Lestari'),
+(3, 6, NULL, 'WITHDRAW', 200000.00, 750000.00, 'Penarikan tunai saldo ke Bank BCA'),
+(4, NULL, 7, 'TOPUP', 250000.00, 250000.00, 'Top Up saldo via Merchant'),
+(5, NULL, 2, 'TOPUP', 5000000.00, 5000000.00, 'Deposit Saldo Karyawan Admin'),
+(6, NULL, 3, 'TOPUP', 4500000.00, 4500000.00, 'Deposit Saldo Karyawan Admin'),
+(7, NULL, 4, 'TOPUP', 3500000.00, 3500000.00, 'Deposit Saldo Karyawan Admin'),
+(8, 12, 14, 'TRANSFER', 350000.00, 1750000.00, 'Pembayaran patungan proyek'),
+(9, 25, 23, 'TRANSFER', 200000.00, 2100000.00, 'Transfer ke Lutfi Hakim'),
+(10, NULL, 9, 'TOPUP', 1200000.00, 1200000.00, 'Top Up QRIS Mandiri'),
+(11, 10, NULL, 'WITHDRAW', 100000.00, 890000.00, 'Tarik tunai ATM'),
+(12, 16, 20, 'TRANSFER', 150000.00, 790000.00, 'Transfer jajan ke Intan Permata');
 
-ALTER TABLE `transactions` AUTO_INCREMENT = 5;
+ALTER TABLE `transactions` AUTO_INCREMENT = 13;
 
--- Audit Log Perubahan Status Akun
-INSERT INTO `user_status_logs` (`id`, `target_user_id`, `changed_by`, `status_sebelum`, `status_sesudah`, `alasan`)
-VALUES (1, 7, 2, TRUE, FALSE, 'Terdeteksi anomali penarikan dana dan percobaan aktivitas mencurigakan');
+-- E. AUDIT LOG STATUS AKUN (Recent Activity dari Admin)
+INSERT INTO `user_status_logs` (`id`, `target_user_id`, `changed_by`, `status_sebelum`, `status_sesudah`, `alasan`, `created_at`) VALUES 
+(1, 8, 2, TRUE, FALSE, 'Terdeteksi anomali penarikan dana dan percobaan aktivitas mencurigakan', '2026-11-08 10:15:00'),
+(2, 21, 3, TRUE, FALSE, 'Laporan indikasi spam transfer dan data identitas belum valid', '2026-11-08 14:30:00');
 
-ALTER TABLE `user_status_logs` AUTO_INCREMENT = 2;
-
+ALTER TABLE `user_status_logs` AUTO_INCREMENT = 3;

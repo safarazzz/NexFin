@@ -1,16 +1,25 @@
 <?php
 // ==========================================================
 // PRESENTATION LAYER: AuthController
-// Menangani alur autentikasi dan pembaruan profil mandiri
+// Menangani alur autentikasi, dashboard, dan pembaruan profil mandiri
 // ==========================================================
 
 require_once __DIR__ . '/../business/AuthService.php';
+require_once __DIR__ . '/../business/WalletService.php';
+require_once __DIR__ . '/../data_access/UserRepository.php';
+require_once __DIR__ . '/../data_access/TransactionRepository.php';
 
 class AuthController {
     private $authService;
+    private $walletService;
+    private $userRepository;
+    private $transactionRepository;
 
     public function __construct() {
         $this->authService = new AuthService();
+        $this->walletService = new WalletService();
+        $this->userRepository = new UserRepository();
+        $this->transactionRepository = new TransactionRepository();
     }
 
     /**
@@ -35,7 +44,7 @@ class AuthController {
                     'email'         => $user['email'],
                     'no_hp'         => $user['no_hp'],
                     'role'          => $user['role'],
-                    'saldo'         => $user['saldo'] ?? 0.00
+                    'saldo'         => (float)($user['saldo'] ?? 0.00)
                 ];
                 $_SESSION['success'] = "Selamat datang kembali, " . htmlspecialchars($user['nama_depan']) . "!";
                 header("Location: index.php?page=dashboard");
@@ -62,12 +71,43 @@ class AuthController {
     }
 
     /**
-     * Dashboard Sesuai Role
+     * Dashboard Interaktif Sesuai Role
      */
     public function dashboard() {
         if (!isset($_SESSION['user'])) {
             header("Location: index.php?page=login");
             exit;
+        }
+
+        $user = $_SESSION['user'];
+        $role = $user['role'];
+        $userId = $user['id'];
+
+        // Sinkronisasi saldo terbaru dari DB jika role pelanggan atau admin
+        if ($role === 'pelanggan' || $role === 'admin') {
+            try {
+                $freshBalance = $this->walletService->getBalance($userId);
+                $_SESSION['user']['saldo'] = $freshBalance;
+                $user['saldo'] = $freshBalance;
+            } catch (Exception $e) {}
+        }
+
+        // Data transaksi pengguna (untuk Pelanggan & Admin)
+        $cashFlow = ['total_masuk' => 0, 'total_keluar' => 0];
+        $recentTransactions = [];
+        if ($role === 'pelanggan' || $role === 'admin') {
+            $cashFlow = $this->walletService->getCashFlow($userId);
+            $recentTransactions = $this->walletService->getHistory($userId, 5);
+        }
+
+        // Data statistik sistem (untuk Admin & Super Admin)
+        $systemStats = [];
+        $recentCustomers = [];
+        $todayTransactions = ['total_hari_ini' => 0, 'volume_hari_ini' => 0];
+        if ($role === 'admin' || $role === 'super_admin') {
+            $systemStats = $this->userRepository->getSystemStats();
+            $recentCustomers = $this->userRepository->getRecentCustomers(5);
+            $todayTransactions = $this->transactionRepository->getTodayTransactionsCount();
         }
 
         require __DIR__ . '/views/dashboard/index.php';
@@ -88,7 +128,6 @@ class AuthController {
             try {
                 $this->authService->updateProfile($userId, $_POST);
                 
-                // Perbarui sesi lokal
                 $_SESSION['user']['nama_depan'] = $_POST['nama_depan'];
                 $_SESSION['user']['nama_belakang'] = $_POST['nama_belakang'];
                 $_SESSION['user']['email'] = $_POST['email'];
@@ -107,4 +146,3 @@ class AuthController {
         require __DIR__ . '/views/profile/edit.php';
     }
 }
-
