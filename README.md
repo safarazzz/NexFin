@@ -1,10 +1,10 @@
 # NexFin - Platform Pengelolaan Keuangan Digital
 
 Selamat datang di repositori **NexFin**! Proyek ini dirancang untuk mendemonstrasikan perbandingan dua pendekatan arsitektur perangkat lunak dalam satu studi kasus sistem keuangan:
-1. **Layered Architecture** (Folder: [`Layered/`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/Layered))
-2. **Non-Layered Architecture** (Folder: [`non-Layered/`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/non-Layered))
+1. **Layered Architecture** 
+2. **Non-Layered Architecture**
 
-Seluruh berkas diagram Mermaid murni disimpan secara modular di dalam folder [`design/`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design).
+Seluruh berkas diagram Mermaid murni disimpan secara modular di dalam folder [`design`].
 
 ---
 
@@ -38,7 +38,7 @@ Sistem NexFin memiliki 3 tingkatan pengguna dengan pembagian peran yang ketat:
 
 ## 🧩 Penerapan Konsep Pemrograman Berorientasi Objek (OOP)
 
-👉 **Diagram Desain:** [`design/oop-class-diagram.md`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/oop-class-diagram.md)
+👉 **Diagram Desain:** [`design/oop-class-diagram.md`]
 
 Sistem dirancang mengadopsi prinsip OOP utama:
 
@@ -56,9 +56,9 @@ Sistem dirancang mengadopsi prinsip OOP utama:
 ## 🏛️ Perbandingan Arsitektur: Layered vs Non-Layered
 
 👉 **Diagram Desain:**
-* [Perbandingan Arsitektur](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/architecture-comparison.md)
-* [Alur Eksekusi Layered (Sequence Diagram)](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/layered-flow.md)
-* [Alur Eksekusi Non-Layered (Sequence Diagram)](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/non-layered-flow.md)
+* [Perbandingan Arsitektur]
+* [Alur Eksekusi Layered (Sequence Diagram)]
+* [Alur Eksekusi Non-Layered (Sequence Diagram)]
 
 ### 1. Arsitektur Non-Layered (Transaction Script / Fat Controller)
 * **Karakteristik:** Satu fungsi/file controller mengeksekusi semua hal dari hulu ke hilir (menerima HTTP, validasi regex manual, hashing password, query SQL langsung, hingga return response).
@@ -84,7 +84,7 @@ Sistem dirancang mengadopsi prinsip OOP utama:
 
 ## 🖥️ Daftar Kebutuhan Halaman & Navigasi
 
-👉 **Diagram Desain:** [`design/sitemap-navigation.md`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/sitemap-navigation.md)
+👉 **Diagram Desain:** [`design/sitemap-navigation.md`]
 
 Berikut kebutuhan antarmuka sistem:
 1. **Login Page:** Akses autentikasi untuk semua role. Jika akun berstatus nonaktif, sistem akan menampilkan notifikasi penolakan akses.
@@ -100,8 +100,8 @@ Berikut kebutuhan antarmuka sistem:
 
 ## 🗄️ Basis Data & Kredensial Pengujian (Dummy Data)
 
-👉 **Diagram ERD:** [`design/erd.md`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/design/erd.md)  
-👉 **Berkas Database:** [`db/database.sql`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/db/database.sql)
+👉 **Diagram ERD:** [`design/erd.md`]
+👉 **Berkas Database:** [`db/database.sql`]
 
 Seluruh skema database dan data dummy disatukan ke dalam **satu berkas tunggal** agar praktis di-import.
 
@@ -111,7 +111,7 @@ Seluruh skema database dan data dummy disatukan ke dalam **satu berkas tunggal**
 3. **`user_status_logs`**: Mencatat audit trail saat akun dinonaktifkan/diaktifkan kembali beserta alasan.
 
 ### Cara Import Database:
-* **Melalui phpMyAdmin (XAMPP):** Buka `http://localhost/phpmyadmin` $\rightarrow$ klik tab **Import** $\rightarrow$ pilih berkas [`db/database.sql`](file:///c:/Users/richi/OneDrive/ドキュメント/GitHub/NexFin/db/database.sql) $\rightarrow$ klik **Kirim / Import**.
+* **Melalui phpMyAdmin (XAMPP):** Buka `http://localhost/phpmyadmin` $\rightarrow$ klik tab **Import** $\rightarrow$ pilih berkas [`db/database.sql`] klik **Kirim / Import**.
 * **Melalui Terminal:**
   ```bash
   mysql -u root -p < db/database.sql
